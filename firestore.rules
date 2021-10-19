@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // This rule allows anyone on the internet to view, edit, and delete
+    // all data in your Firestore database. It is useful for getting
+    // started, but it is configured to expire after 30 days because it
+    // leaves your app open to attackers. At that time, all client
+    // requests to your Firestore database will be denied.
+    //
+    // Make sure to write security rules for your app before that time, or else
+    // your app will lose access to your Firestore database
+//    match /{document=**} {
+//      allow read, write: if 1 == 2;
+//    }
+
+//     	function hasCustomClaim(claim) {
+//      	return request.auth.token[claim] || false;
+//    	}
+
+// NUR ADMIN!!!
+    match /template {
+      allow read, write: if 1 == 2;
+    }
+    match /email {
+      allow read, write: if 1 == 2;
+    }
+    match /partnerprogramm {
+      allow read, write: if 1 == 2;
+    }
+
+// MEETINGPOINT ADMINS
+
+// only admins can see invoices
+		match /invoices/{invoiceId} {
+    	allow read: if request.auth != null && request.auth.token.admin == true || request.auth.token.isBock == true || request.auth.token.isStartHub == true;
+    }
+
+// COMMUNITY > angemeldet
+    match /community/{communityMember=**} {
+    	allow read: if request.auth != null;
+    }
+
+// MEETINGPOINT DESKS
+	// normale user müssen authentifiziert sein
+		match /desks/{deskId} {
+    	allow read: if request != null;
+      //allow read: if request.auth != null;
+    }
+    
+    // reservationen ebenfalls nur für authentifizierte user
+    match /desks/{deskId}/{reservations=**} {
+    	allow read: if request != null;
+      //allow read: if request.auth != null;
+    }
+    
+      //MEETINGPOINT USERPROFILE
+    match /users/{userId}/{reservations=**} {
+      allow read, update, write, create: if request.auth != null && request.auth.uid == userId; //Eigene Daten
+      //allow read: if request.auth != null;
+    }
+
+  }
+}
