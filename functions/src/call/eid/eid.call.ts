@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable require-jsdoc */
 /* eslint-disable max-len */
 /* eslint-disable camelcase */
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+
+admin.initializeApp(functions.config().firebase);
 
 import {CallableContext} from "firebase-functions/lib/providers/https";
 
@@ -35,35 +39,47 @@ interface EidDataTokenRequest {
 }
 
 export async function callEidLogin(data: EidDataTokenRequest, context: CallableContext): Promise<string | undefined> {
+  console.log(JSON.stringify(data));
+
   // GET TOKEN FROM EID
   const eidToken: EidLogin | undefined = await postEidToken(data);
   if (!eidToken) {
     return undefined;
   }
-
+  console.log("EID Token: " + JSON.stringify(eidToken));
   const userData: any = await getEidUserData(eidToken.access_token);
-  const customtoken = await admin.auth().createCustomToken(userData.sub, {
 
+  console.log("Userdata received" + JSON.stringify(userData));
+  const customtoken = await admin.auth().createCustomToken(userData.sub, {
+    admin: false,
+    isStartHub: false,
+    isBock: false,
   });
 
-  // create entry in db for user.
-  await db
-      .collection("userProfile")
-      .doc(userData.sub)
-      .set(
-          {
-            firstName: userData.given_name,
-            lastName: userData.family_name,
-            email: userData.email,
-          },
-          {
-            merge: true,
-          }
-      );
+  const userRef = await db.collection("users").doc(userData.sub).get();
+  if (!userRef.exists) {
+    await db
+        .collection("users")
+        .doc(userData.sub)
+        .set(
+            {
+              admin: false,
+              isStartHub: false,
+              isBock: false,
+              profilePicture: userData.picture,
+              bio: "Noch keine Bio vorhanden",
+              firstName: userData.given_name,
+              lastName: userData.family_name,
+              email: userData.email || "",
+            },
+            {
+              merge: true,
+            }
+        );
+  }
 
   // TODO: Validate token with public key from eid gateway.
-
-  console.log(JSON.stringify(customtoken));
+  // console.log(JSON.stringify(customtoken));
   return customtoken;
   // return eidToken.id_token;
   /*
@@ -88,12 +104,16 @@ export async function callEidLogin(data: EidDataTokenRequest, context: CallableC
   );*/
 }
 
-export async function callEidData(data: EidDataTokenRequest, context: CallableContext): Promise<EidUserData | undefined> {
+export async function callEidData(data: EidDataTokenRequest, context: CallableContext): Promise<any | undefined> {
+  console.log(JSON.stringify(data));
+
   const eidToken: EidLogin | undefined = await postEidToken(data);
 
   if (!eidToken) {
     return undefined;
   }
+
+  console.log("EID Token: " + eidToken);
 
   // console.log('3. GET UserData with Access Token: ' + eidToken.access_token);
   return await getEidUserData(eidToken.access_token);
@@ -121,13 +141,13 @@ async function postEidToken(data: EidDataTokenRequest): Promise<EidLogin | undef
     const response: any = await axios.default(axiosConfig);
     return response.data;
   } catch (e) {
-    console.log("Token error");
+    console.log(">>> Token error");
     console.error(e);
     return undefined;
   }
 }
 
-async function getEidUserData(accessToken: string): Promise<EidUserData | undefined> {
+async function getEidUserData(accessToken: string): Promise<any | undefined> {
   const axiosConfig: any = {
     method: "get",
     url: config.userinfo_endpoint,
