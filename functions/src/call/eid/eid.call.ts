@@ -66,7 +66,7 @@ export async function callEidLogin(data: EidDataTokenRequest, context: CallableC
               admin: false,
               isStartHub: false,
               isBock: false,
-              profilePicture: userData.picture,
+              profilePicture: "data:image/png;base64," + userData.picture,
               bio: "Noch keine Bio vorhanden",
               firstName: userData.given_name,
               lastName: userData.family_name,
