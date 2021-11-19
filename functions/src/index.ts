@@ -2,7 +2,6 @@
 import * as functions from "firebase-functions";
 import {callEidData, callEidLogin} from "./call/eid/eid.call";
 import {webhookStripe} from "./request/stripe/stripe.webhook";
-import {eidProxy} from "./request/eid/eid.proxy";
 import {getStartups, getPrintStartups} from "./request/startups/startups.get"; // api für startups
 import {authUserCreate} from "./auth/user.create";
 import {monthlyStartupNewsletter, weeklyStartupNewsletter} from "./scheduler/monthly.startup.scheduler";
